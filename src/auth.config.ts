@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { withBasePath } from "@/lib/basePath";
 
 /**
  * Edge-safe auth config (no Prisma / Node APIs).
@@ -8,7 +9,8 @@ export const authConfig = {
   trustHost: true,
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/login",
+    // Auth.js resolves this from host root — include basePath
+    signIn: withBasePath("/login"),
   },
   providers: [],
   callbacks: {

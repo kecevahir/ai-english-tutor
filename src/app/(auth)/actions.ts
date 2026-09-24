@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { createLearnerAccount } from "@/lib/database/repositories/userRepository";
+import { withBasePath } from "@/lib/basePath";
 
 export type AuthFormState = {
   error?: string;
@@ -10,7 +11,7 @@ export type AuthFormState = {
 };
 
 export async function logoutAction() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: withBasePath("/login") });
 }
 
 export async function loginAction(
@@ -28,7 +29,7 @@ export async function loginAction(
     await signIn("credentials", {
       username,
       password,
-      redirectTo: "/dashboard",
+      redirectTo: withBasePath("/dashboard"),
     });
     return { ok: true };
   } catch (err) {
@@ -59,7 +60,7 @@ export async function registerAction(
     await signIn("credentials", {
       username,
       password,
-      redirectTo: "/dashboard",
+      redirectTo: withBasePath("/dashboard"),
     });
     return { ok: true };
   } catch (err) {
