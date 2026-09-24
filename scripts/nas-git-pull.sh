@@ -1,18 +1,27 @@
 #!/bin/sh
-# NAS: run via Task Scheduler every 2 minutes as root.
-# /volume1/Docker/englishtutor/scripts/nas-git-pull.sh >> /volume1/Docker/englishtutor_git_pull.log 2>&1
+# NAS: run via cron every 2 minutes as root.
+# */2 * * * * /volume1/Docker/englishtutor/scripts/nas-git-pull.sh >> /volume1/Docker/englishtutor_git_pull.log 2>&1
 set -eu
 
+PATH="/usr/local/bin:/usr/bin:/bin:/usr/syno/bin:${PATH:-}"
 APP_DIR="${APP_DIR:-/volume1/Docker/englishtutor}"
-# Until PR is merged to main, deploy the live feature branch
 BRANCH="${DEPLOY_BRANCH:-cursor/englishtutor-vite-skeleton-c272}"
 LOCK="/tmp/englishtutor-nas-git-pull.lock"
+DOCKER_BIN="${DOCKER_BIN:-}"
+
+if [ -z "$DOCKER_BIN" ]; then
+  if [ -x /usr/local/bin/docker ]; then
+    DOCKER_BIN=/usr/local/bin/docker
+  elif command -v docker >/dev/null 2>&1; then
+    DOCKER_BIN="$(command -v docker)"
+  fi
+fi
 
 cd "$APP_DIR" || exit 1
 
-# Avoid overlapping cron runs
 if [ -f "$LOCK" ]; then
-  if [ -n "$(find "$LOCK" -mmin +20 2>/dev/null)" ]; then
+  if [ -n "$(find "$LOCK" -mmin +40 2>/dev/null)" ]; then
+    echo "$(date -Iseconds) stale lock removed"
     rm -f "$LOCK"
   else
     echo "$(date -Iseconds) skip: lock held"
@@ -32,28 +41,23 @@ git reset --hard "origin/$BRANCH"
 AFTER="$(git rev-parse HEAD)"
 
 if [ "$BEFORE" = "$AFTER" ]; then
-  echo "$(date -Iseconds) no changes"
+  echo "$(date -Iseconds) no changes ($AFTER)"
   exit 0
 fi
 
 echo "$(date -Iseconds) updated $BEFORE → $AFTER — rebuilding"
 
-# Ensure AUTH_SECRET exists for NextAuth
 if [ -f "$APP_DIR/.env" ] && ! grep -q '^AUTH_SECRET=' "$APP_DIR/.env"; then
   echo "AUTH_SECRET=\"englishtutor-auto-$(date +%s)\"" >> "$APP_DIR/.env"
   echo "$(date -Iseconds) added AUTH_SECRET to .env"
 fi
 
-if command -v docker >/dev/null 2>&1 && [ -f "$APP_DIR/docker-compose.yml" ]; then
-  cd "$APP_DIR"
-  if [ -x /usr/local/bin/docker ]; then
-    /usr/local/bin/docker compose up -d --build
-  else
-    docker compose up -d --build
-  fi
-  echo "$(date -Iseconds) docker compose up -d --build done"
-  exit 0
+if [ -z "$DOCKER_BIN" ]; then
+  echo "$(date -Iseconds) ERROR: docker not found in PATH=$PATH"
+  exit 1
 fi
 
-echo "$(date -Iseconds) ERROR: docker compose not available"
-exit 1
+cd "$APP_DIR"
+"$DOCKER_BIN" compose up -d --build
+echo "$(date -Iseconds) docker compose up -d --build done (commit $AFTER)"
+echo "$AFTER $(date -Iseconds)" > "$APP_DIR/.deployed-commit"
