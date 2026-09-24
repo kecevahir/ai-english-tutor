@@ -41,9 +41,12 @@ services:
       NODE_ENV: production
     volumes:
       - ./:/app
+      # Keep node_modules inside Docker so host/partial installs cannot break builds
+      - englishtutor_node_modules:/app/node_modules
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
+  englishtutor_node_modules:
