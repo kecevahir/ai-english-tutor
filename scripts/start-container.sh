@@ -1,6 +1,5 @@
 #!/bin/sh
-# Fast boot after nas-git-pull already built via docker exec.
-# Does NOT run npm ci / next build on every restart.
+# Fast boot. Rebuild only when deploy-head != built commit (no blind npm ci).
 set -eu
 cd /app
 
@@ -11,10 +10,17 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
-# Safety net: if somehow never built, build once
-if [ ! -f .next/BUILD_ID ] || [ ! -x node_modules/.bin/next ]; then
-  echo "[englishtutor] missing build — running rebuild-if-needed…"
+HEAD="$(cat .deploy-head 2>/dev/null || true)"
+if [ -z "$HEAD" ]; then
+  HEAD="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+fi
+BUILT="$(cat .next/GIT_HEAD 2>/dev/null || echo none)"
+
+if [ ! -f .next/BUILD_ID ] || [ "$HEAD" != "$BUILT" ] || [ ! -x node_modules/.bin/next ]; then
+  echo "[englishtutor] rebuild needed ($BUILT → $HEAD)"
   sh /app/scripts/rebuild-if-needed.sh
+else
+  echo "[englishtutor] build ok ($HEAD)"
 fi
 
 npx prisma migrate deploy >/dev/null 2>&1 || true
