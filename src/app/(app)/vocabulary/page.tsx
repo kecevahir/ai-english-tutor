@@ -1,11 +1,14 @@
-import { ComingSoonPage } from "@/components/shared/ComingSoonPage";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { VocabularyWorkspace } from "@/components/vocabulary/VocabularyWorkspace";
 
 export default function VocabularyPage() {
   return (
-    <ComingSoonPage
-      title="Vocabulary"
-      phase="Phase 4"
-      description="Automatic extraction from conversations, SRS scheduling, and exercise types (translation, reverse, fill-blank, sentence creation)."
-    />
+    <div>
+      <AppHeader
+        title="Vocabulary"
+        subtitle="Word bank, spaced repetition, and mixed exercise types"
+      />
+      <VocabularyWorkspace />
+    </div>
   );
 }
