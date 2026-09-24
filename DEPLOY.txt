@@ -1,0 +1,97 @@
+AI ENGLISH TUTOR — OTOMATİK DEPLOY (Git → NAS)
+==============================================
+izin_v8_final ile aynı model:
+
+  Mac/Windows: kod düzenle → deploy script → GitHub push
+  NAS: her 2 dk git pull → build / container restart
+  URL: https://dmportal.com.tr/englishtutor/
+
+DataSync / zip / ADM kopya YOK.
+
+────────────────────────────────────────
+A) MAC — GÜNLÜK
+────────────────────────────────────────
+  cd …/ai-english-tutor
+  bash scripts/deploy-mac.sh "kısa açıklama"
+
+  Mac'te npm run build YAPMAYIN (NAS build eder).
+
+────────────────────────────────────────
+A2) WINDOWS — GÜNLÜK
+────────────────────────────────────────
+  scripts\deploy-windows.bat "kısa açıklama"
+  Windows'ta npm install / npm run build YAPMAYIN.
+
+────────────────────────────────────────
+B) NAS — İLK KURULUM (bir kez)  ★ SEN YAPACAKSIN
+────────────────────────────────────────
+1. Portainer: yeni stack / container için klasör hazırla.
+
+2. GitHub'dan klonla (ADM SSH):
+   cd /volume1/Docker
+   git clone https://github.com/kecevahir/ai-english-tutor.git englishtutor
+
+   Private olursa deploy key veya PAT kullan (izin ile aynı yöntem).
+
+3. scripts izinleri:
+   chmod +x /volume1/Docker/englishtutor/scripts/*.sh
+
+4. .env oluştur (/volume1/Docker/englishtutor/.env):
+   DATABASE_URL=postgresql://englishtutor:ŞİFRE@db:5432/englishtutor?schema=public
+   AI_PROVIDER=mock
+   # İleride: OPENAI_API_KEY=...
+
+5. Container / compose:
+   cd /volume1/Docker/englishtutor
+   docker compose up -d --build
+
+   Container adı önerisi: englishtutor-app
+   Command (elle container ise):
+     sh /app/scripts/start-container.sh
+   Volume: /volume1/Docker/englishtutor → /app
+   Port: örn. 3100:3000  (izin ile çakışmayan port)
+
+6. Synology Reverse Proxy (Kontrol Paneli → Login Portal → Reverse Proxy)
+   veya mevcut dmportal nginx/Express kuralı:
+     https://dmportal.com.tr/englishtutor  →  http://127.0.0.1:3100/englishtutor
+   (Next.js basePath=/englishtutor — path'i olduğu gibi ilet)
+
+7. ADM → Görev Zamanlayıcı → Yeni
+   - Kullanıcı: root
+   - Zamanlama: her 2 dakika  (*/2 * * * *)
+   - Komut:
+     /volume1/Docker/englishtutor/scripts/nas-git-pull.sh >> /volume1/Docker/englishtutor_git_pull.log 2>&1
+
+8. İlk seferde branch:
+   NAS varsayılan olarak main çeker.
+   PR merge edilmeden önce:
+     cd /volume1/Docker/englishtutor
+     git fetch origin
+     git checkout cursor/englishtutor-vite-skeleton-c272
+   veya PR'ı main'e merge et (önerilen).
+
+────────────────────────────────────────
+C) GÜNLÜK KULLANIM
+────────────────────────────────────────
+1. Kodu düzenle
+2. bash scripts/deploy-mac.sh   (veya Windows bat)
+3. ~2-3 dk bekle
+4. https://dmportal.com.tr/englishtutor/  hard refresh
+
+Log:
+  tail -f /volume1/Docker/englishtutor_git_pull.log
+  docker logs englishtutor-app
+
+────────────────────────────────────────
+D) SORUN GİDERME
+────────────────────────────────────────
+- UI güncellenmiyor: NAS'ta git log -1 — Mac ile aynı commit mi?
+- dubious ownership:
+    git config --global --add safe.directory /volume1/Docker/englishtutor
+- pull hata: token/SSH; .git/config
+- 404 /englishtutor: Reverse Proxy kuralı yok veya container down
+- DB: DATABASE_URL ve postgres servisi (docker compose db)
+
+izin ile paralel:
+  /volume1/Docker/izin_v8_final  → dmportal.com.tr/izin
+  /volume1/Docker/englishtutor   → dmportal.com.tr/englishtutor
