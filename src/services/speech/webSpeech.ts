@@ -54,15 +54,24 @@ export function createWebSpeechToTextProvider(): SpeechToTextProvider {
       }
       recognition = new Ctor();
       recognition.lang = options?.lang ?? "en-US";
-      recognition.continuous = false;
-      recognition.interimResults = true;
+      recognition.continuous = options?.continuous ?? false;
+      recognition.interimResults = options?.interimResults ?? true;
       recognition.onresult = (event) => {
-        const result = event.results[event.resultIndex];
-        if (!result) return;
+        let transcript = "";
+        let confidence = 0;
+        let isFinal = false;
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          const result = event.results[i];
+          if (!result) continue;
+          transcript += result[0].transcript;
+          confidence = result[0].confidence;
+          isFinal = result.isFinal;
+        }
+        if (!transcript) return;
         resultHandler?.({
-          transcript: result[0].transcript,
-          isFinal: result.isFinal,
-          confidence: result[0].confidence,
+          transcript: transcript.trim(),
+          isFinal,
+          confidence,
         });
       };
       recognition.onerror = (event) => {

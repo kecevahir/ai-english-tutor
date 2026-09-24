@@ -60,7 +60,7 @@ export async function registerAction(
     await signIn("credentials", {
       username,
       password,
-      redirectTo: withBasePath("/dashboard"),
+      redirectTo: withBasePath("/assessment"),
     });
     return { ok: true };
   } catch (err) {

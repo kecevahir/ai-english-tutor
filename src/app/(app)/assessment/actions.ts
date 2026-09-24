@@ -19,6 +19,7 @@ export async function submitAssessmentAction(
     revalidatePath("/progress");
     revalidatePath("/settings");
     revalidatePath("/assessment");
+    revalidatePath("/lesson");
     return { ok: true as const, result };
   } catch (error) {
     return {

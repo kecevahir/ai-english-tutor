@@ -31,7 +31,7 @@ const NAV = [
   { href: "/grammar", label: "Grammar", icon: SpellCheck2 },
   { href: "/review", label: "Review", icon: RotateCcw },
   { href: "/progress", label: "Progress", icon: LineChart },
-  { href: "/assessment", label: "Assessment", icon: ClipboardCheck },
+  { href: "/assessment", label: "Seviye ölçümü", icon: ClipboardCheck },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

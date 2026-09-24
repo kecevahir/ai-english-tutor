@@ -1,11 +1,14 @@
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppStatusBar } from "@/components/layout/AppStatusBar";
+import { enforcePlacementAssessment } from "@/lib/auth/enforcePlacementAssessment";
 
-export default function AppShellLayout({
+export default async function AppShellLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await enforcePlacementAssessment();
+
   return (
     <div className="flex min-h-screen bg-[var(--background)]">
       <AppSidebar />

@@ -19,23 +19,29 @@ export default auth((req) => {
   const path = stripBasePath(pathname);
   const origin = req.nextUrl.origin;
 
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", path);
+
   if (isPublicPath(pathname)) {
     if (req.auth && (path === "/login" || path === "/register")) {
       return NextResponse.redirect(new URL(withBasePath("/dashboard"), origin));
     }
-    return NextResponse.next();
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
   }
 
   if (!req.auth) {
     const login = new URL(withBasePath("/login"), origin);
-    // Relative callback without basePath prefix (Next will resolve); never self-loop
     if (path !== "/login" && path !== "/register") {
       login.searchParams.set("callbackUrl", withBasePath(path));
     }
     return NextResponse.redirect(login);
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 });
 
 export const config = {

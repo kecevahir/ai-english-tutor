@@ -5,8 +5,8 @@ export default function AssessmentPage() {
   return (
     <div>
       <AppHeader
-        title="Level Assessment"
-        subtitle="Vocabulary, grammar, reading, writing, and speaking placement"
+        title="Seviye ölçümü"
+        subtitle="Reading · Writing · Listening · Speaking — sonuçların dersleri kişiselleştirir"
       />
       <AssessmentWorkspace />
     </div>
