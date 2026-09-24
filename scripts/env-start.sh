@@ -17,9 +17,24 @@ fi
 if [ ! -f .env ]; then
   cat > .env <<'EOF'
 DATABASE_URL="postgresql://englishtutor:englishtutor@localhost:5432/englishtutor?schema=public"
+AUTH_SECRET="englishtutor-cloud-agent-dev-secret"
+AUTH_URL="http://127.0.0.1:3000"
 AI_PROVIDER="mock"
+SPEECH_STT_PROVIDER="web"
+SPEECH_TTS_PROVIDER="web"
 EOF
 fi
+
+# Fill missing keys without overwriting agent/user secrets already present.
+ensure_env() {
+  local key="$1" value="$2"
+  if ! grep -q "^${key}=" .env 2>/dev/null; then
+    printf '%s=%s\n' "$key" "$value" >> .env
+  fi
+}
+ensure_env AUTH_SECRET '"englishtutor-cloud-agent-dev-secret"'
+ensure_env AUTH_URL '"http://127.0.0.1:3000"'
+ensure_env AI_PROVIDER '"mock"'
 
 if [ ! -f .env.local ]; then
   cp .env .env.local
