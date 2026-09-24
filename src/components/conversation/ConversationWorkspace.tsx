@@ -2,12 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type {
-  Conversation,
   ConversationDifficulty,
-  ConversationMessage,
   ConversationMode,
-  GrammarTopic,
-  Mistake,
 } from "@prisma/client";
 import {
   endConversationAction,
@@ -22,21 +18,17 @@ import {
   difficultyLabel,
   modeLabel,
 } from "@/services/conversation/constants";
+import type {
+  SerializedConversation,
+  SerializedConversationListItem,
+  SerializedMistake,
+} from "@/services/conversation/serialize";
 import { cn } from "@/utils/cn";
-
-type ConversationListItem = Conversation & {
-  _count: { messages: number; mistakes: number };
-};
-
-type ConversationDetail = Conversation & {
-  messages: ConversationMessage[];
-  mistakes: Array<Mistake & { grammarTopic: GrammarTopic | null }>;
-};
 
 export function ConversationWorkspace() {
   const [provider, setProvider] = useState("mock");
-  const [list, setList] = useState<ConversationListItem[]>([]);
-  const [active, setActive] = useState<ConversationDetail | null>(null);
+  const [list, setList] = useState<SerializedConversationListItem[]>([]);
+  const [active, setActive] = useState<SerializedConversation | null>(null);
   const [mode, setMode] = useState<ConversationMode>("FREE");
   const [difficulty, setDifficulty] =
     useState<ConversationDifficulty>("ADAPTIVE");
@@ -103,17 +95,17 @@ export function ConversationWorkspace() {
   function onStart() {
     setError(null);
     startTransition(async () => {
-      try {
-        const conversation = await startConversationAction({
-          mode,
-          difficulty,
-          customPrompt: showCustom ? customPrompt : undefined,
-        });
-        setActive(conversation);
-        refreshList();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to start.");
+      const result = await startConversationAction({
+        mode,
+        difficulty,
+        customPrompt: showCustom ? customPrompt : undefined,
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
       }
+      setActive(result.conversation);
+      refreshList();
     });
   }
 
@@ -177,7 +169,7 @@ export function ConversationWorkspace() {
                       : "hover:bg-[var(--surface)] text-[var(--foreground)]",
                   )}
                 >
-                  <span className="block font-medium truncate">
+                  <span className="block truncate font-medium">
                     {item.title ?? modeLabel(item.mode)}
                   </span>
                   <span className="mt-0.5 block text-xs text-[var(--muted)]">
@@ -208,6 +200,7 @@ export function ConversationWorkspace() {
             {active && !ended ? (
               <button
                 type="button"
+                data-testid="end-conversation"
                 onClick={onEnd}
                 disabled={pending}
                 className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--surface)] disabled:opacity-60"
@@ -250,7 +243,7 @@ export function ConversationWorkspace() {
                 </select>
               </label>
               {showCustom ? (
-                <label className="sm:col-span-2 text-sm">
+                <label className="text-sm sm:col-span-2">
                   <span className="mb-1 block text-[var(--muted)]">
                     Custom scenario
                   </span>
@@ -265,6 +258,7 @@ export function ConversationWorkspace() {
               <div className="sm:col-span-2">
                 <button
                   type="button"
+                  data-testid="start-conversation"
                   onClick={onStart}
                   disabled={pending}
                   className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
@@ -282,7 +276,10 @@ export function ConversationWorkspace() {
         </div>
 
         {error ? (
-          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+          <div
+            role="alert"
+            className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100"
+          >
             {error}
           </div>
         ) : null}
@@ -320,6 +317,7 @@ export function ConversationWorkspace() {
                 }}
               >
                 <input
+                  data-testid="message-input"
                   className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -328,6 +326,7 @@ export function ConversationWorkspace() {
                 />
                 <button
                   type="submit"
+                  data-testid="send-message"
                   disabled={pending || !draft.trim()}
                   className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
                 >
@@ -352,13 +351,12 @@ export function ConversationWorkspace() {
   );
 }
 
-function ConversationReview({
-  mistakes,
-}: {
-  mistakes: Array<Mistake & { grammarTopic: GrammarTopic | null }>;
-}) {
+function ConversationReview({ mistakes }: { mistakes: SerializedMistake[] }) {
   return (
-    <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+    <section
+      data-testid="conversation-review"
+      className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5"
+    >
       <h3 className="text-sm font-semibold text-[var(--foreground)]">
         Conversation Review
       </h3>

@@ -13,17 +13,22 @@ import {
   startConversation,
 } from "@/services/conversation/conversationService";
 import { getConfiguredAIProviderName } from "@/services/ai";
+import {
+  serializeConversation,
+  serializeConversationList,
+} from "@/services/conversation/serialize";
 
 export async function fetchConversationsAction() {
-  const [conversations, provider] = await Promise.all([
-    listConversations(),
-    Promise.resolve(getConfiguredAIProviderName()),
-  ]);
-  return { conversations, provider };
+  const conversations = await listConversations();
+  return {
+    conversations: serializeConversationList(conversations),
+    provider: getConfiguredAIProviderName(),
+  };
 }
 
 export async function fetchConversationAction(conversationId: string) {
-  return getConversation(conversationId);
+  const conversation = await getConversation(conversationId);
+  return serializeConversation(conversation);
 }
 
 export async function startConversationAction(input: {
@@ -31,10 +36,17 @@ export async function startConversationAction(input: {
   difficulty: ConversationDifficulty;
   customPrompt?: string;
 }) {
-  const conversation = await startConversation(input);
-  revalidatePath("/conversation");
-  revalidatePath("/dashboard");
-  return conversation;
+  try {
+    const conversation = await startConversation(input);
+    revalidatePath("/conversation");
+    revalidatePath("/dashboard");
+    return { ok: true as const, conversation: serializeConversation(conversation) };
+  } catch (error) {
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to start conversation.",
+    };
+  }
 }
 
 export async function sendMessageAction(input: {
@@ -44,7 +56,7 @@ export async function sendMessageAction(input: {
   try {
     const conversation = await sendConversationMessage(input);
     revalidatePath("/conversation");
-    return { ok: true as const, conversation };
+    return { ok: true as const, conversation: serializeConversation(conversation) };
   } catch (error) {
     return {
       ok: false as const,
@@ -60,7 +72,7 @@ export async function endConversationAction(conversationId: string) {
     revalidatePath("/review");
     revalidatePath("/dashboard");
     revalidatePath("/vocabulary");
-    return { ok: true as const, conversation };
+    return { ok: true as const, conversation: serializeConversation(conversation) };
   } catch (error) {
     return {
       ok: false as const,
