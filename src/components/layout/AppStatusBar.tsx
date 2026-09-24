@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/utils/cn";
-import { APP_VERSION } from "@/lib/appVersion";
+import { APP_VERSION, APP_VERSION_EMOJI } from "@/lib/appVersion";
 
-export { APP_VERSION };
+export { APP_VERSION, APP_VERSION_EMOJI };
 
 function formatNow(d: Date) {
   return new Intl.DateTimeFormat("tr-TR", {
