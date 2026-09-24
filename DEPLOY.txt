@@ -1,0 +1,29 @@
+AI ENGLISH TUTOR — OTOMATİK DEPLOY (Git → NAS)
+==============================================
+İzin ile aynı mantık (hızlı):
+
+  Mac/agent: kod → git push
+  NAS cron (2 dk): git pull → docker restart
+  Container entrypoint: gerekirse next build (image rebuild YOK)
+
+URL: https://dmportal.com.tr/englishtutor/
+
+────────────────────────────────────────
+NAS — CRON (bir kez, root)
+────────────────────────────────────────
+  */2 * * * * /volume1/Docker/englishtutor/scripts/nas-git-pull.sh >> /volume1/Docker/englishtutor_git_pull.log 2>&1
+
+────────────────────────────────────────
+NAS — İLK / COMPOSE DEĞİŞİNCE (seyrek)
+────────────────────────────────────────
+  Sadece Dockerfile veya docker-compose değişince:
+    cd /volume1/Docker/englishtutor
+    docker compose up -d --build
+
+  Günlük kod için ASLA --build kullanma; cron restart yeter.
+
+────────────────────────────────────────
+LOG
+────────────────────────────────────────
+  tail -f /volume1/Docker/englishtutor_git_pull.log
+  docker logs -f englishtutor-app

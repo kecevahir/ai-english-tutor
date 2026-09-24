@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: englishtutor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: englishtutor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-englishtutor}
+      POSTGRES_DB: englishtutor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U englishtutor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # İzin-style: code is bind-mounted. Daily deploys = git pull + container restart
+  # (NO docker image rebuild). Image is only rebuilt when Dockerfile/deps change.
+  app:
+    build: .
+    image: englishtutor-app:local
+    container_name: englishtutor-app
+    restart: unless-stopped
+    working_dir: /app
+    command: ["sh", "/app/scripts/start-container.sh"]
+    ports:
+      - "${APP_PORT:-3100}:3000"
+    environment:
+      DATABASE_URL: postgresql://englishtutor:${POSTGRES_PASSWORD:-englishtutor}@db:5432/englishtutor?schema=public
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_MODEL: ${AI_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-30000}
+      AUTH_SECRET: ${AUTH_SECRET:-englishtutor-dev-secret-change-me}
+      AUTH_TRUST_HOST: "true"
+      AUTH_URL: ${AUTH_URL:-https://dmportal.com.tr/englishtutor}
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    volumes:
+      - ./:/app
+      # Keep node_modules inside Docker so host/partial installs cannot break builds
+      - englishtutor_node_modules:/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  englishtutor_node_modules:

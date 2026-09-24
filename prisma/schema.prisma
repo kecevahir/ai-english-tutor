@@ -1,0 +1,377 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B1_PLUS @map("B1+")
+  B2
+  B2_PLUS @map("B2+")
+  C1
+  C2
+}
+
+enum SkillType {
+  SPEAKING
+  LISTENING
+  GRAMMAR
+  VOCABULARY
+  PRONUNCIATION
+  WRITING
+}
+
+enum ConversationMode {
+  FREE
+  DAILY_LIFE
+  TRAVEL
+  BUSINESS
+  RESTAURANT
+  HOTEL
+  AIRPORT
+  SHOPPING
+  PHONE_CALL
+  MEETING
+  JOB_INTERVIEW
+  DEBATE
+  CUSTOM
+}
+
+enum ConversationDifficulty {
+  EASY
+  NORMAL
+  CHALLENGING
+  ADAPTIVE
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum MistakeCategory {
+  GRAMMAR
+  VOCABULARY
+  WORD_CHOICE
+  WORD_ORDER
+  PREPOSITION
+  ARTICLE
+  TENSE
+  PRONUNCIATION
+  SPELLING
+  NATURAL_EXPRESSION
+}
+
+enum VocabularyStatus {
+  NEW
+  LEARNING
+  FAMILIAR
+  MASTERED
+}
+
+enum LessonStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum LessonActivityType {
+  VOCABULARY_REVIEW
+  GRAMMAR
+  SPEAKING
+  LISTENING
+  CONVERSATION
+  WRITING
+  PRONUNCIATION
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  email        String?  @unique
+  displayName  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile             UserProfile?
+  skillProgress       SkillProgress[]
+  grammarProgress     GrammarProgress[]
+  vocabularyProgress  VocabularyProgress[]
+  conversations       Conversation[]
+  mistakes            Mistake[]
+  lessons             Lesson[]
+  listeningSessions   ListeningSession[]
+  speakingSessions    SpeakingSession[]
+  reviewHistory       ReviewHistory[]
+}
+
+model UserProfile {
+  id                   String          @id @default(cuid())
+  userId               String          @unique
+  overallLevel         CefrLevel       @default(B1)
+  englishOnlyMode      Boolean         @default(false)
+  theme                ThemePreference @default(SYSTEM)
+  dailyGoalMinutes     Int             @default(25)
+  currentStreak        Int             @default(0)
+  longestStreak        Int             @default(0)
+  lastStudyDate        DateTime?
+  assessmentCompleted  Boolean         @default(false)
+  wordsLearnedCount    Int             @default(0)
+  conversationsCount   Int             @default(0)
+  speakingMinutes      Int             @default(0)
+  lessonsCompleted     Int             @default(0)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SkillProgress {
+  id           String    @id @default(cuid())
+  userId       String
+  skill        SkillType
+  level        CefrLevel @default(B1)
+  score        Float     @default(0)
+  lastPracticed DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skill])
+  @@index([userId])
+}
+
+model GrammarTopic {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  cefrBand    CefrLevel?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  progress GrammarProgress[]
+  mistakes Mistake[]
+}
+
+model GrammarProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  topicId        String
+  score          Float     @default(0)
+  attempts       Int       @default(0)
+  correctAnswers Int       @default(0)
+  mistakes       Int       @default(0)
+  masteryLevel   Float     @default(0)
+  lastPracticed  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic GrammarTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+  @@index([userId, masteryLevel])
+}
+
+model Vocabulary {
+  id              String   @id @default(cuid())
+  word            String
+  translation     String?
+  definition      String?
+  exampleSentence String?
+  level           CefrLevel?
+  category        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  progress VocabularyProgress[]
+
+  @@unique([word, category])
+  @@index([word])
+}
+
+model VocabularyProgress {
+  id             String           @id @default(cuid())
+  userId         String
+  vocabularyId   String
+  status         VocabularyStatus @default(NEW)
+  firstSeen      DateTime         @default(now())
+  lastReviewed   DateTime?
+  reviewCount    Int              @default(0)
+  correctCount   Int              @default(0)
+  incorrectCount Int              @default(0)
+  masteryScore   Float            @default(0)
+  nextReview     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vocabularyId])
+  @@index([userId, nextReview])
+  @@index([userId, status])
+}
+
+model Conversation {
+  id           String                 @id @default(cuid())
+  userId       String
+  mode         ConversationMode       @default(FREE)
+  difficulty   ConversationDifficulty @default(ADAPTIVE)
+  customPrompt String?
+  title        String?
+  startedAt    DateTime               @default(now())
+  endedAt      DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ConversationMessage[]
+  mistakes Mistake[]
+
+  @@index([userId, startedAt])
+}
+
+model ConversationMessage {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String
+  audioUrl       String?
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model Mistake {
+  id                String          @id @default(cuid())
+  userId            String
+  conversationId    String?
+  grammarTopicId    String?
+  originalSentence  String
+  correctedSentence String
+  explanation       String?
+  category          MistakeCategory
+  subCategory       String?
+  severity          Int             @default(1)
+  reviewCount       Int             @default(0)
+  lastReviewedAt    DateTime?
+  mastered          Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  grammarTopic GrammarTopic? @relation(fields: [grammarTopicId], references: [id], onDelete: SetNull)
+
+  @@index([userId, category, createdAt])
+  @@index([userId, mastered])
+}
+
+model Lesson {
+  id              String       @id @default(cuid())
+  userId          String
+  title           String
+  estimatedMinutes Int         @default(25)
+  status          LessonStatus @default(PLANNED)
+  recommendation  String?
+  scheduledFor    DateTime
+  completedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities LessonActivity[]
+
+  @@index([userId, scheduledFor])
+}
+
+model LessonActivity {
+  id              String             @id @default(cuid())
+  lessonId        String
+  type            LessonActivityType
+  title           String
+  description     String?
+  estimatedMinutes Int               @default(5)
+  sortOrder       Int                @default(0)
+  payload         Json?
+  completed       Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, sortOrder])
+}
+
+model ListeningSession {
+  id              String    @id @default(cuid())
+  userId          String
+  title           String
+  level           CefrLevel
+  durationSeconds Int
+  transcript      String?
+  audioUrl        String?
+  score           Float?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model SpeakingSession {
+  id              String    @id @default(cuid())
+  userId          String
+  topic           String?
+  durationSeconds Int       @default(0)
+  grammarNotes    String?
+  fluencyNotes    String?
+  vocabularyNotes String?
+  pronunciationNotes String?
+  focusArea       String?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model ReviewHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  itemType     String
+  itemId       String
+  wasCorrect   Boolean
+  responseMeta Json?
+  reviewedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, reviewedAt])
+  @@index([itemType, itemId])
+}
