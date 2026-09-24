@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { createAIProvider } from "@/services/ai";
 import { AIProviderError } from "@/services/ai/errors";
 import { CONVERSATION_ANALYSIS_PROMPT } from "@/prompts/conversationAnalysis";
@@ -12,7 +12,7 @@ import { nextReviewDate } from "@/lib/srs/schedule";
  * Corrections are stored for review; chat was not interrupted mid-turn.
  */
 export async function analyzeAndPersistConversation(conversationId: string) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
 
   const conversation = await prisma.conversation.findFirst({

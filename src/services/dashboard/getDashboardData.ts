@@ -1,5 +1,5 @@
 import { adaptiveLearningEngine } from "@/services/adaptiveLearning/adaptiveLearningEngine";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import {
   getTodaysLesson,
   listGrammarProgress,
@@ -9,7 +9,7 @@ import { cefrToDisplay } from "@/utils/cn";
 import type { DashboardData } from "@/types/learning";
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
 
   const [grammarProgress, dueVocabCount, todayLesson] = await Promise.all([

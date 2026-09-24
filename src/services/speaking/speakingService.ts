@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { createAIProvider } from "@/services/ai";
 import { cefrToDisplay } from "@/utils/cn";
 import { ENGLISH_TUTOR_SYSTEM_PROMPT } from "@/prompts/englishTutor";
@@ -13,7 +13,7 @@ const SPEAKING_PROMPTS = [
 ];
 
 export async function startSpeakingSession(topic?: string) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const prompt =
     topic?.trim() ||
     SPEAKING_PROMPTS[Math.floor(Math.random() * SPEAKING_PROMPTS.length)]!;
@@ -33,7 +33,7 @@ export async function submitSpeakingAnswer(input: {
   transcript: string;
   durationSeconds: number;
 }) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const session = await prisma.speakingSession.findFirst({
     where: { id: input.sessionId, userId: user.id },
@@ -128,7 +128,7 @@ function splitSpeakingNotes(notes: string, transcript: string) {
 }
 
 export async function listSpeakingSessions(limit = 10) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   return prisma.speakingSession.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },

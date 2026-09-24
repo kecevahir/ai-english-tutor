@@ -4,7 +4,7 @@ import {
   MessageRole,
 } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { createAIProvider } from "@/services/ai";
 import { AIProviderError } from "@/services/ai/errors";
 import { ENGLISH_TUTOR_SYSTEM_PROMPT } from "@/prompts/englishTutor";
@@ -16,7 +16,7 @@ import {
 import { analyzeAndPersistConversation } from "@/services/conversation/mistakeAnalysisService";
 
 export async function listConversations(limit = 20) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   return prisma.conversation.findMany({
     where: { userId: user.id },
     orderBy: { startedAt: "desc" },
@@ -28,7 +28,7 @@ export async function listConversations(limit = 20) {
 }
 
 export async function getConversation(conversationId: string) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const conversation = await prisma.conversation.findFirst({
     where: { id: conversationId, userId: user.id },
     include: {
@@ -50,7 +50,7 @@ export async function startConversation(input: {
   difficulty: ConversationDifficulty;
   customPrompt?: string;
 }) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const title = `${modeLabel(input.mode)} · ${new Date().toLocaleString()}`;
 
@@ -104,7 +104,7 @@ export async function sendConversationMessage(input: {
     throw new Error("Message cannot be empty.");
   }
 
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const conversation = await prisma.conversation.findFirst({
     where: { id: input.conversationId, userId: user.id },
@@ -171,7 +171,7 @@ export async function sendConversationMessage(input: {
 }
 
 export async function endConversation(conversationId: string) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const conversation = await prisma.conversation.findFirst({
     where: { id: conversationId, userId: user.id },
   });

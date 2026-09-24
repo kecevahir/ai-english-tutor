@@ -1,0 +1,20 @@
+import { RegisterForm } from "@/components/auth/RegisterForm";
+
+export default function RegisterPage() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--background)] px-4">
+      <div className="mb-8 text-center">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+          AI English Tutor
+        </p>
+        <h1 className="mt-2 font-[family-name:var(--font-serif)] text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+          Hesap oluştur
+        </h1>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Ücretsiz kayıt ol, kişisel ders planına başla.
+        </p>
+      </div>
+      <RegisterForm />
+    </div>
+  );
+}

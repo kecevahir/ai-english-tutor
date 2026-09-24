@@ -1,4 +1,5 @@
-import { PrismaClient, CefrLevel, SkillType, LessonStatus, LessonActivityType } from "@prisma/client";
+import { PrismaClient, CefrLevel, SkillType } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -23,196 +24,66 @@ const GRAMMAR_TOPICS: Array<{ slug: string; name: string; cefrBand: CefrLevel }>
   { slug: "numbers-dates", name: "Numbers & Dates", cefrBand: CefrLevel.A1 },
 ];
 
-const MASTERY: Record<string, number> = {
-  "present-perfect": 52,
-  prepositions: 58,
-  "past-simple": 64,
-  articles: 67,
-  "present-continuous": 72,
-  conditionals: 70,
-  "modal-verbs": 74,
-  "future-forms": 76,
-  "daily-conversation": 91,
-  "travel-vocabulary": 88,
-  "numbers-dates": 90,
-  "present-simple": 86,
-};
-
+/**
+ * Idempotent seed — never wipes learner data.
+ * Shared grammar catalog + optional demo account for local/dev.
+ */
 async function main() {
-  await prisma.reviewHistory.deleteMany();
-  await prisma.lessonActivity.deleteMany();
-  await prisma.lesson.deleteMany();
-  await prisma.mistake.deleteMany();
-  await prisma.conversationMessage.deleteMany();
-  await prisma.conversation.deleteMany();
-  await prisma.listeningSession.deleteMany();
-  await prisma.speakingSession.deleteMany();
-  await prisma.vocabularyProgress.deleteMany();
-  await prisma.vocabulary.deleteMany();
-  await prisma.grammarProgress.deleteMany();
-  await prisma.grammarTopic.deleteMany();
-  await prisma.skillProgress.deleteMany();
-  await prisma.userProfile.deleteMany();
-  await prisma.user.deleteMany();
-
   for (const topic of GRAMMAR_TOPICS) {
-    await prisma.grammarTopic.create({ data: topic });
+    await prisma.grammarTopic.upsert({
+      where: { slug: topic.slug },
+      create: topic,
+      update: { name: topic.name, cefrBand: topic.cefrBand },
+    });
   }
 
-  const user = await prisma.user.create({
-    data: {
-      email: "learner@local.dev",
-      displayName: "Learner",
-      profile: {
-        create: {
-          overallLevel: CefrLevel.B1_PLUS,
-          dailyGoalMinutes: 25,
-          currentStreak: 7,
-          longestStreak: 12,
-          lastStudyDate: new Date(),
-          assessmentCompleted: true,
-          wordsLearnedCount: 482,
-          conversationsCount: 37,
-          speakingMinutes: 145,
-          lessonsCompleted: 18,
-          englishOnlyMode: false,
-          theme: "SYSTEM",
+  const demoUsername = process.env.SEED_DEMO_USERNAME || "demo";
+  const demoPassword = process.env.SEED_DEMO_PASSWORD || "demo1234";
+  const existing = await prisma.user.findUnique({ where: { username: demoUsername } });
+
+  if (!existing) {
+    const passwordHash = await bcrypt.hash(demoPassword, 10);
+    await prisma.user.create({
+      data: {
+        username: demoUsername,
+        passwordHash,
+        email: "learner@local.dev",
+        displayName: "Demo Learner",
+        profile: {
+          create: {
+            overallLevel: CefrLevel.B1_PLUS,
+            dailyGoalMinutes: 25,
+            currentStreak: 0,
+            longestStreak: 0,
+            assessmentCompleted: false,
+            wordsLearnedCount: 0,
+            conversationsCount: 0,
+            speakingMinutes: 0,
+            lessonsCompleted: 0,
+            englishOnlyMode: false,
+            theme: "SYSTEM",
+          },
+        },
+        skillProgress: {
+          create: Object.values(SkillType).map((skill) => ({
+            skill,
+            level: CefrLevel.B1,
+            score: 50,
+          })),
         },
       },
-      skillProgress: {
-        create: [
-          { skill: SkillType.SPEAKING, level: CefrLevel.B1, score: 62 },
-          { skill: SkillType.LISTENING, level: CefrLevel.B2, score: 74 },
-          { skill: SkillType.GRAMMAR, level: CefrLevel.B1, score: 58 },
-          { skill: SkillType.VOCABULARY, level: CefrLevel.B1_PLUS, score: 68 },
-          { skill: SkillType.PRONUNCIATION, level: CefrLevel.B1, score: 60 },
-          { skill: SkillType.WRITING, level: CefrLevel.B1_PLUS, score: 65 },
-        ],
-      },
-    },
-  });
-
-  const topics = await prisma.grammarTopic.findMany();
-  for (const topic of topics) {
-    const mastery = MASTERY[topic.slug] ?? 75;
-    const attempts = 20 + Math.round((100 - mastery) / 2);
-    const correct = Math.round((mastery / 100) * attempts);
-    await prisma.grammarProgress.create({
-      data: {
-        userId: user.id,
-        topicId: topic.id,
-        masteryLevel: mastery,
-        score: mastery,
-        attempts,
-        correctAnswers: correct,
-        mistakes: Math.max(attempts - correct, 0),
-        lastPracticed: new Date(),
-      },
     });
+    console.log(`Seeded demo user: ${demoUsername} / ${demoPassword}`);
+  } else {
+    console.log(`Demo user already exists: ${demoUsername}`);
   }
 
-  const sampleWords = [
-    { word: "appointment", translation: "randevu", category: "Daily Life" },
-    { word: "deadline", translation: "son teslim tarihi", category: "Business" },
-    { word: "luggage", translation: "bagaj", category: "Travel" },
-    { word: "receipt", translation: "fiş / makbuz", category: "Shopping" },
-    { word: "negotiate", translation: "pazarlık etmek", category: "Business" },
-    { word: "commute", translation: "işe gidip gelmek", category: "Daily Life" },
-    { word: "itinerary", translation: "seyahat programı", category: "Travel" },
-    { word: "reliable", translation: "güvenilir", category: "General" },
-  ];
-
-  for (const item of sampleWords) {
-    const vocab = await prisma.vocabulary.create({
-      data: {
-        word: item.word,
-        translation: item.translation,
-        category: item.category,
-        level: CefrLevel.B1,
-        definition: item.word,
-        exampleSentence: `I need to practice the word "${item.word}".`,
-      },
-    });
-    await prisma.vocabularyProgress.create({
-      data: {
-        userId: user.id,
-        vocabularyId: vocab.id,
-        status: "LEARNING",
-        nextReview: new Date(),
-        reviewCount: 1,
-      },
-    });
-  }
-
-  const presentPerfect = topics.find((t) => t.slug === "present-perfect");
-  if (presentPerfect) {
-    await prisma.mistake.create({
-      data: {
-        userId: user.id,
-        grammarTopicId: presentPerfect.id,
-        originalSentence: "Yesterday I go to my office and I meet my customer.",
-        correctedSentence: "Yesterday I went to my office and met my client.",
-        explanation: "Use Past Simple for finished actions at a specific time in the past.",
-        category: "TENSE",
-        subCategory: "Past Simple / Irregular Verbs",
-        severity: 2,
-      },
-    });
-  }
-
-  const today = new Date();
-  today.setHours(9, 0, 0, 0);
-
-  await prisma.lesson.create({
-    data: {
-      userId: user.id,
-      title: "Today's Lesson",
-      estimatedMinutes: 25,
-      status: LessonStatus.PLANNED,
-      scheduledFor: today,
-      recommendation:
-        "You have been struggling with Present Perfect.\nToday's lesson will focus on Present Perfect, Past Simple vs Present Perfect, conversation practice, and vocabulary reviews.",
-      activities: {
-        create: [
-          {
-            type: LessonActivityType.VOCABULARY_REVIEW,
-            title: "Vocabulary Review",
-            description: "8 words due",
-            estimatedMinutes: 5,
-            sortOrder: 1,
-          },
-          {
-            type: LessonActivityType.GRAMMAR,
-            title: "Present Perfect",
-            description: "Past Simple vs Present Perfect",
-            estimatedMinutes: 7,
-            sortOrder: 2,
-          },
-          {
-            type: LessonActivityType.SPEAKING,
-            title: "Speaking",
-            description: "What have you done this week?",
-            estimatedMinutes: 8,
-            sortOrder: 3,
-          },
-          {
-            type: LessonActivityType.LISTENING,
-            title: "Listening",
-            description: "B1 short conversation",
-            estimatedMinutes: 5,
-            sortOrder: 4,
-          },
-        ],
-      },
-    },
-  });
-
-  console.log("Seeded demo learner:", user.email);
+  console.log("Seed complete (grammar topics upserted).");
 }
 
 main()
-  .catch((error) => {
-    console.error(error);
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

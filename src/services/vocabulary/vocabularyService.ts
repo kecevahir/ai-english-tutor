@@ -1,6 +1,6 @@
 import type { VocabularyStatus } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { nextReviewDate } from "@/lib/srs/schedule";
 import { createAIProvider } from "@/services/ai";
 import { cefrToDisplay } from "@/utils/cn";
@@ -12,7 +12,7 @@ export type VocabExerciseType =
   | "SENTENCE_CREATION";
 
 export async function listVocabulary(status?: VocabularyStatus) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   return prisma.vocabularyProgress.findMany({
     where: {
       userId: user.id,
@@ -24,7 +24,7 @@ export async function listVocabulary(status?: VocabularyStatus) {
 }
 
 export async function listDueVocabulary(limit = 12) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   return prisma.vocabularyProgress.findMany({
     where: {
       userId: user.id,
@@ -89,7 +89,7 @@ export async function gradeVocabularyAnswer(input: {
   type: VocabExerciseType;
   answer: string;
 }) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const progress = await prisma.vocabularyProgress.findFirst({
     where: { id: input.progressId, userId: user.id },

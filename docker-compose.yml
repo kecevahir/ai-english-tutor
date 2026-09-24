@@ -28,6 +28,8 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-30000}
+      AUTH_SECRET: ${AUTH_SECRET:-englishtutor-dev-secret-change-me}
+      AUTH_TRUST_HOST: "true"
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
     depends_on:

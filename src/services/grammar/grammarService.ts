@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 
 export type GrammarDrill = {
   progressId: string;
@@ -47,7 +47,7 @@ const DRILLS: Record<string, Array<{ prompt: string; expected: string; explanati
 };
 
 export async function listGrammarMastery() {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   return prisma.grammarProgress.findMany({
     where: { userId: user.id },
     include: { topic: true },
@@ -88,7 +88,7 @@ export async function gradeGrammarDrill(input: {
   expected: string;
   explanation: string;
 }) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const progress = await prisma.grammarProgress.findFirst({
     where: { id: input.progressId, userId: user.id },
     include: { topic: true },

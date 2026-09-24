@@ -1,6 +1,6 @@
 import { CefrLevel } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { createAIProvider } from "@/services/ai";
 import { cefrToDisplay } from "@/utils/cn";
 import { nextReviewDate } from "@/lib/srs/schedule";
@@ -13,7 +13,7 @@ type ComprehensionQuestion = {
 };
 
 export async function createListeningSession() {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const level = profile.overallLevel;
 
@@ -121,7 +121,7 @@ export async function completeListeningSession(input: {
   answers: number[];
   questions: ComprehensionQuestion[];
 }) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const session = await prisma.listeningSession.findFirst({
     where: { id: input.sessionId, userId: user.id },
   });
@@ -179,7 +179,7 @@ export async function completeListeningSession(input: {
 }
 
 export async function listListeningSessions(limit = 10) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   return prisma.listeningSession.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },

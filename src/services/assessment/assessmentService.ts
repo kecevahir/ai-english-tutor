@@ -1,6 +1,6 @@
 import { CefrLevel, SkillType } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { cefrToDisplay } from "@/utils/cn";
 
 export type AssessmentSection =
@@ -97,7 +97,7 @@ function wordCountScore(text: string): number {
 export async function submitAssessment(
   answers: Record<string, string | number>,
 ) {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
 
   let objectiveCorrect = 0;
   let objectiveTotal = 0;

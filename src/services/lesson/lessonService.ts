@@ -1,6 +1,6 @@
 import { LessonActivityType, LessonStatus } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { listGrammarProgress } from "@/lib/database/repositories/learningRepository";
 import { adaptiveLearningEngine } from "@/services/adaptiveLearning/adaptiveLearningEngine";
 import { createAIProvider } from "@/services/ai";
@@ -20,7 +20,7 @@ function endOfDay(date = new Date()) {
 }
 
 export async function getOrCreateTodaysLesson() {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const existing = await prisma.lesson.findFirst({
     where: {
       userId: user.id,
@@ -33,7 +33,7 @@ export async function getOrCreateTodaysLesson() {
 }
 
 export async function generateTodaysLesson() {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const [grammarProgress, dueVocab, recentMistakes] = await Promise.all([
     listGrammarProgress(user.id),

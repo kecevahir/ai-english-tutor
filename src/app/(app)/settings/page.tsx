@@ -1,21 +1,30 @@
 import { AppHeader } from "@/components/layout/AppHeader";
 import { EnglishOnlyToggle } from "@/components/settings/EnglishOnlyToggle";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
 
   return (
     <div>
       <AppHeader
         title="Settings"
-        subtitle="Preferences for the password-free MVP profile"
+        subtitle={`${user.displayName || user.username} · @${user.username}`}
       />
       <div className="space-y-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
         <div>
+          <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            Account
+          </h2>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            Username: <strong>@{user.username}</strong>
+          </p>
+        </div>
+
+        <div className="border-t border-[var(--border)] pt-6">
           <h2 className="text-sm font-semibold text-[var(--foreground)]">
             English Only Mode
           </h2>

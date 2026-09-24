@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { listGrammarProgress } from "@/lib/database/repositories/learningRepository";
 import { adaptiveLearningEngine } from "@/services/adaptiveLearning/adaptiveLearningEngine";
 import { cefrToDisplay } from "@/utils/cn";
@@ -15,7 +15,7 @@ function rangeStart(range: ProgressRange): Date | null {
 }
 
 export async function getProgressOverview(range: ProgressRange = "30d") {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const profile = user.profile!;
   const since = rangeStart(range);
 

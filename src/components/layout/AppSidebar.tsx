@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/utils/cn";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -106,6 +107,9 @@ export function AppSidebar() {
             );
           })}
         </nav>
+        <div className="border-t border-[var(--border)] px-3 py-3">
+          <LogoutButton />
+        </div>
       </aside>
     </>
   );

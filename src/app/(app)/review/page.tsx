@@ -1,12 +1,12 @@
 import { AppHeader } from "@/components/layout/AppHeader";
-import { requireDemoUser } from "@/lib/database/repositories/userRepository";
+import { requireCurrentUser } from "@/lib/database/repositories/userRepository";
 import { prisma } from "@/lib/database/prisma";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReviewPage() {
-  const user = await requireDemoUser();
+  const user = await requireCurrentUser();
   const mistakes = await prisma.mistake.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
