@@ -1,7 +1,8 @@
 #!/bin/sh
-# NAS cron — izin-style fast deploy:
-#   git pull → docker restart (entrypoint rebuilds Next if needed)
-#   NO docker compose --build on every change.
+# NAS cron — fast deploy (izin-style):
+#   1) git pull
+#   2) docker exec rebuild-if-needed  (old site still up)
+#   3) docker restart                 (boot only — no npm ci)
 #
 # */2 * * * * /volume1/Docker/englishtutor/scripts/nas-git-pull.sh >> /volume1/Docker/englishtutor_git_pull.log 2>&1
 set -eu
@@ -33,6 +34,7 @@ echo $$ > "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
 
 git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
+chmod +x "$APP_DIR/scripts/"*.sh 2>/dev/null || true
 
 BEFORE="$(git rev-parse HEAD 2>/dev/null || echo none)"
 echo "$(date -Iseconds) pull origin/$BRANCH (was $BEFORE)"
@@ -46,9 +48,7 @@ if [ "$BEFORE" = "$AFTER" ]; then
   exit 0
 fi
 
-echo "$(date -Iseconds) updated $BEFORE → $AFTER — fast restart (no image rebuild)"
-
-# Stamp for container (git may be missing inside the image)
+echo "$(date -Iseconds) updated $BEFORE → $AFTER"
 echo "$AFTER" > "$APP_DIR/.deploy-head"
 
 if [ -f "$APP_DIR/.env" ] && ! grep -q '^AUTH_SECRET=' "$APP_DIR/.env"; then
@@ -60,14 +60,23 @@ if [ -z "$DOCKER_BIN" ]; then
   exit 1
 fi
 
-# Ensure compose stack is up; recreate only if container missing
-if ! "$DOCKER_BIN" ps -a --format '{{.Names}}' | grep -q '^englishtutor-app$'; then
-  echo "$(date -Iseconds) container missing — compose up (one-time)"
+if ! "$DOCKER_BIN" ps --format '{{.Names}}' | grep -q '^englishtutor-app$'; then
+  echo "$(date -Iseconds) container not running — compose up (one-time)"
   cd "$APP_DIR"
-  "$DOCKER_BIN" compose up -d --build
-else
-  # Fast path: restart so bind-mounted code is rebuilt by start-container.sh
+  "$DOCKER_BIN" compose up -d
+  # wait for first boot rebuild
+  sleep 5
+  "$DOCKER_BIN" exec englishtutor-app sh /app/scripts/rebuild-if-needed.sh || true
   "$DOCKER_BIN" restart englishtutor-app
+else
+  echo "$(date -Iseconds) rebuild inside running container…"
+  if "$DOCKER_BIN" exec englishtutor-app sh /app/scripts/rebuild-if-needed.sh; then
+    echo "$(date -Iseconds) restart (fast boot)…"
+    "$DOCKER_BIN" restart englishtutor-app
+  else
+    echo "$(date -Iseconds) exec rebuild failed — restart fallback"
+    "$DOCKER_BIN" restart englishtutor-app
+  fi
 fi
 
 echo "$(date -Iseconds) deploy done ($AFTER)"

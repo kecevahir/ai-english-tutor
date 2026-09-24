@@ -1,5 +1,6 @@
 #!/bin/sh
-# Bind-mounted entrypoint. Always ensure build deps, then next build if needed.
+# Fast boot after nas-git-pull already built via docker exec.
+# Does NOT run npm ci / next build on every restart.
 set -eu
 cd /app
 
@@ -10,31 +11,12 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
-echo "[englishtutor] npm ci --include=dev…"
-npm ci --include=dev
-
-npx prisma generate
-npx prisma migrate deploy
-
-if npx tsx prisma/seed.ts; then
-  echo "[englishtutor] seed ok"
-else
-  echo "[englishtutor] seed skipped/failed (continuing)"
+# Safety net: if somehow never built, build once
+if [ ! -f .next/BUILD_ID ] || [ ! -x node_modules/.bin/next ]; then
+  echo "[englishtutor] missing build — running rebuild-if-needed…"
+  sh /app/scripts/rebuild-if-needed.sh
 fi
 
-HEAD="$(cat .deploy-head 2>/dev/null || true)"
-if [ -z "$HEAD" ]; then
-  HEAD="$(git rev-parse HEAD 2>/dev/null || date +%s)"
-fi
-BUILT="$(cat .next/GIT_HEAD 2>/dev/null || echo none)"
-
-if [ ! -f .next/BUILD_ID ] || [ "$HEAD" != "$BUILT" ] || [ ! -d node_modules/@tailwindcss/postcss ]; then
-  echo "[englishtutor] next build ($BUILT → $HEAD)…"
-  rm -rf .next
-  NODE_ENV=production npm run build
-  echo "$HEAD" > .next/GIT_HEAD
-else
-  echo "[englishtutor] next build up to date ($HEAD)"
-fi
+npx prisma migrate deploy >/dev/null 2>&1 || true
 
 exec npm run start -- -H 0.0.0.0 -p "${PORT:-3000}"
