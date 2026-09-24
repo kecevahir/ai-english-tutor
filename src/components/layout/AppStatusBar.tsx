@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export const APP_VERSION = "V1";
+export const APP_VERSION = "V1.1";
 
 function formatNow(d: Date) {
   return new Intl.DateTimeFormat("tr-TR", {

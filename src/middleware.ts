@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/auth.config";
+import { withBasePath } from "@/lib/basePath";
 import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
@@ -11,20 +12,19 @@ export default auth((req) => {
     pathname === "/register" ||
     pathname.startsWith("/api/auth");
 
+  const origin = req.nextUrl.origin;
+
   if (isPublic) {
     if (req.auth && (pathname === "/login" || pathname === "/register")) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL(withBasePath("/dashboard"), origin));
     }
     return NextResponse.next();
   }
 
   if (!req.auth) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(url);
+    const login = new URL(withBasePath("/login"), origin);
+    login.searchParams.set("callbackUrl", withBasePath(pathname));
+    return NextResponse.redirect(login);
   }
 
   return NextResponse.next();
