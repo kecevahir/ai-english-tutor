@@ -1,12 +1,11 @@
 import { LoginForm } from "@/components/auth/LoginForm";
 import { AppStatusBar } from "@/components/layout/AppStatusBar";
-import { APP_VERSION } from "@/lib/appVersion";
+import { APP_VERSION, APP_VERSION_EMOJI } from "@/lib/appVersion";
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--background)] px-4 pt-14">
       <AppStatusBar variant="public" />
-      {/* Server-rendered marker for deploy checks (curl / view-source) */}
       <meta name="englishtutor-version" content={APP_VERSION} />
       <p className="sr-only" data-englishtutor-version={APP_VERSION}>
         {APP_VERSION}
@@ -25,7 +24,7 @@ export default function LoginPage() {
           className="mt-3 text-xs font-semibold tracking-wider text-[var(--foreground)]"
           data-englishtutor-version={APP_VERSION}
         >
-          {APP_VERSION}
+          {APP_VERSION_EMOJI} {APP_VERSION}
         </p>
       </div>
       <LoginForm />

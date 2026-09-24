@@ -44,7 +44,7 @@ export function AppStatusBar({ variant = "app" }: { variant?: "app" | "public" }
         {now}
       </time>
       <span className="rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 font-semibold tracking-wider text-[var(--foreground)]">
-        {APP_VERSION}
+        {APP_VERSION_EMOJI} {APP_VERSION}
       </span>
     </div>
   );
