@@ -17,9 +17,15 @@
 - [x] Mistake rows + grammar progress touch + vocab extraction
 - [x] Conversation Review UI + Review page recent mistakes
 
-## Next: Phase 4 — Vocabulary
+### Phase 4 — Vocabulary
+- [x] Vocabulary page with status filters
+- [x] Exercise types (translation, reverse, fill-blank, sentence)
+- [x] SRS review session + ReviewHistory
+- [x] Service/UI e2e scripts
 
-1. Vocabulary page with status filters
-2. Exercise types (translation, reverse, fill-blank, sentence)
-3. SRS review session UI
-4. Wire adaptive engine `selectVocabulary` into daily lesson
+## Next: Phase 5 — Grammar
+
+1. Grammar topic list with mastery
+2. Short drills per topic
+3. Update GrammarProgress from exercise results
+4. Feed weak topics into adaptive engine / lessons

@@ -1,11 +1,14 @@
-import { ComingSoonPage } from "@/components/shared/ComingSoonPage";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { GrammarWorkspace } from "@/components/grammar/GrammarWorkspace";
 
 export default function GrammarPage() {
   return (
-    <ComingSoonPage
-      title="Grammar"
-      phase="Phase 5"
-      description="Per-topic mastery tracking, drills, and adaptive selection driven by the mistake and grammar engines."
-    />
+    <div>
+      <AppHeader
+        title="Grammar"
+        subtitle="Topic mastery tracking and weak-area drills"
+      />
+      <GrammarWorkspace />
+    </div>
   );
 }
