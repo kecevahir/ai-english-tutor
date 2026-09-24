@@ -24,10 +24,12 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/src ./src
+# public/ is optional; create empty dir if missing in build context
+RUN mkdir -p ./public
+COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && npm run start"]
