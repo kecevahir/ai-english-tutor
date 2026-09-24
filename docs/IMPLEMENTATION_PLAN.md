@@ -1,24 +1,25 @@
 # Implementation plan
 
-## Completed in Phase 1
+## Completed
 
-- [x] Architecture document
-- [x] Next.js + TS + Tailwind with `basePath: /englishtutor`
-- [x] Full Prisma schema for planned entities
-- [x] Migration + demo seed
-- [x] Sidebar shell + all primary routes
-- [x] Dashboard from DB (stats, skills, weak/strong, recommendation)
-- [x] Today's Lesson read-only view from seeded plan
-- [x] Settings: English Only Mode toggle (persisted)
-- [x] AI / Speech / Adaptive Learning stubs + prompts
-- [x] `.env.example` + README
+### Phase 1
+- [x] Architecture, Next.js + Prisma foundation, dashboard, settings
 
-## Next: Phase 2 — AI Conversation
+### Phase 2 — AI Conversation
+- [x] Conversation UI (modes + difficulty + custom scenario)
+- [x] OpenAI + Anthropic providers (fail clearly without keys)
+- [x] Mock provider for local practice without API keys
+- [x] Persist Conversation / ConversationMessage
+- [x] Loading + error states; English Only wired into system prompt
 
-1. Conversation UI (modes + difficulty)
-2. `createAIProvider()` real OpenAI/Anthropic adapters
-3. Persist `Conversation` / `ConversationMessage`
-4. Streaming responses + loading/error states
-5. Keep English Only Mode wired into system prompt
+### Phase 3 — Mistake Analysis
+- [x] End-of-conversation analysis (no mid-chat interruption)
+- [x] Mistake rows + grammar progress touch + vocab extraction
+- [x] Conversation Review UI + Review page recent mistakes
 
-Gate: Phase 1 must build, migrate, and run before Phase 2 code lands.
+## Next: Phase 4 — Vocabulary
+
+1. Vocabulary page with status filters
+2. Exercise types (translation, reverse, fill-blank, sentence)
+3. SRS review session UI
+4. Wire adaptive engine `selectVocabulary` into daily lesson

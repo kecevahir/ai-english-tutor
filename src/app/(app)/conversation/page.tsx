@@ -1,11 +1,14 @@
-import { ComingSoonPage } from "@/components/shared/ComingSoonPage";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { ConversationWorkspace } from "@/components/conversation/ConversationWorkspace";
 
 export default function ConversationPage() {
   return (
-    <ComingSoonPage
-      title="AI Conversation"
-      phase="Phase 2–3"
-      description="Text (and later voice) conversation with mode/difficulty controls, background mistake capture, and end-of-chat review."
-    />
+    <div>
+      <AppHeader
+        title="AI Conversation"
+        subtitle="Practice in English — corrections are saved when you end the chat"
+      />
+      <ConversationWorkspace />
+    </div>
   );
 }
