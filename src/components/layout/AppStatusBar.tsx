@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/utils/cn";
+import { APP_VERSION } from "@/lib/appVersion";
 
-/** Bump this on each release so the login page shows deploy status. */
-export const APP_VERSION = "V1.2";
+export { APP_VERSION };
 
 function formatNow(d: Date) {
   return new Intl.DateTimeFormat("tr-TR", {
