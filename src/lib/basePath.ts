@@ -8,3 +8,12 @@ export function withBasePath(path: string): string {
   }
   return `${BASE_PATH}${normalized}`;
 }
+
+/** Strip basePath for middleware matching (handles both /login and /englishtutor/login). */
+export function stripBasePath(pathname: string): string {
+  if (pathname === BASE_PATH) return "/";
+  if (pathname.startsWith(`${BASE_PATH}/`)) {
+    return pathname.slice(BASE_PATH.length) || "/";
+  }
+  return pathname;
+}
