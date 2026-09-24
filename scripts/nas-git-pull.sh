@@ -1,5 +1,8 @@
 #!/bin/sh
-# NAS: run via cron every 2 minutes as root.
+# NAS cron — izin-style fast deploy:
+#   git pull → docker restart (entrypoint rebuilds Next if needed)
+#   NO docker compose --build on every change.
+#
 # */2 * * * * /volume1/Docker/englishtutor/scripts/nas-git-pull.sh >> /volume1/Docker/englishtutor_git_pull.log 2>&1
 set -eu
 
@@ -7,14 +10,12 @@ PATH="/usr/local/bin:/usr/bin:/bin:/usr/syno/bin:${PATH:-}"
 APP_DIR="${APP_DIR:-/volume1/Docker/englishtutor}"
 BRANCH="${DEPLOY_BRANCH:-cursor/englishtutor-vite-skeleton-c272}"
 LOCK="/tmp/englishtutor-nas-git-pull.lock"
-DOCKER_BIN="${DOCKER_BIN:-}"
+DOCKER_BIN=""
 
-if [ -z "$DOCKER_BIN" ]; then
-  if [ -x /usr/local/bin/docker ]; then
-    DOCKER_BIN=/usr/local/bin/docker
-  elif command -v docker >/dev/null 2>&1; then
-    DOCKER_BIN="$(command -v docker)"
-  fi
+if [ -x /usr/local/bin/docker ]; then
+  DOCKER_BIN=/usr/local/bin/docker
+elif command -v docker >/dev/null 2>&1; then
+  DOCKER_BIN="$(command -v docker)"
 fi
 
 cd "$APP_DIR" || exit 1
@@ -45,19 +46,26 @@ if [ "$BEFORE" = "$AFTER" ]; then
   exit 0
 fi
 
-echo "$(date -Iseconds) updated $BEFORE → $AFTER — rebuilding"
+echo "$(date -Iseconds) updated $BEFORE → $AFTER — fast restart (no image rebuild)"
 
 if [ -f "$APP_DIR/.env" ] && ! grep -q '^AUTH_SECRET=' "$APP_DIR/.env"; then
   echo "AUTH_SECRET=\"englishtutor-auto-$(date +%s)\"" >> "$APP_DIR/.env"
-  echo "$(date -Iseconds) added AUTH_SECRET to .env"
 fi
 
 if [ -z "$DOCKER_BIN" ]; then
-  echo "$(date -Iseconds) ERROR: docker not found in PATH=$PATH"
+  echo "$(date -Iseconds) ERROR: docker not found"
   exit 1
 fi
 
-cd "$APP_DIR"
-"$DOCKER_BIN" compose up -d --build
-echo "$(date -Iseconds) docker compose up -d --build done (commit $AFTER)"
+# Ensure compose stack is up; recreate only if container missing
+if ! "$DOCKER_BIN" ps -a --format '{{.Names}}' | grep -q '^englishtutor-app$'; then
+  echo "$(date -Iseconds) container missing — compose up (one-time)"
+  cd "$APP_DIR"
+  "$DOCKER_BIN" compose up -d --build
+else
+  # Fast path: restart so bind-mounted code is rebuilt by start-container.sh
+  "$DOCKER_BIN" restart englishtutor-app
+fi
+
+echo "$(date -Iseconds) deploy done ($AFTER)"
 echo "$AFTER $(date -Iseconds)" > "$APP_DIR/.deployed-commit"

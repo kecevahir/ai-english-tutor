@@ -15,10 +15,15 @@ services:
       timeout: 5s
       retries: 10
 
+  # İzin-style: code is bind-mounted. Daily deploys = git pull + container restart
+  # (NO docker image rebuild). Image is only rebuilt when Dockerfile/deps change.
   app:
     build: .
+    image: englishtutor-app:local
     container_name: englishtutor-app
     restart: unless-stopped
+    working_dir: /app
+    command: ["sh", "/app/scripts/start-container.sh"]
     ports:
       - "${APP_PORT:-3100}:3000"
     environment:
@@ -33,6 +38,9 @@ services:
       AUTH_URL: ${AUTH_URL:-https://dmportal.com.tr/englishtutor}
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    volumes:
+      - ./:/app
     depends_on:
       db:
         condition: service_healthy

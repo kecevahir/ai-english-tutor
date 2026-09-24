@@ -1,3 +1,3 @@
 /** Bump on each user-visible release (also shown on login without auth). */
-export const APP_VERSION = "V1.4";
+export const APP_VERSION = "V1.5";
 export const APP_VERSION_EMOJI = "📚";
