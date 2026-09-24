@@ -1,11 +1,14 @@
-import { ComingSoonPage } from "@/components/shared/ComingSoonPage";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { ListeningWorkspace } from "@/components/listening/ListeningWorkspace";
 
 export default function ListeningPage() {
   return (
-    <ComingSoonPage
-      title="Listening"
-      phase="Phase 8"
-      description="Level-matched audio dialogues, comprehension questions, optional transcript, and vocabulary capture from misses."
-    />
+    <div>
+      <AppHeader
+        title="Listening"
+        subtitle="Level-matched dialogue, comprehension, transcript, vocabulary capture"
+      />
+      <ListeningWorkspace />
+    </div>
   );
 }

@@ -1,11 +1,14 @@
-import { ComingSoonPage } from "@/components/shared/ComingSoonPage";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { ProgressWorkspace } from "@/components/progress/ProgressWorkspace";
 
 export default function ProgressPage() {
   return (
-    <ComingSoonPage
-      title="Progress"
-      phase="Phase 9"
-      description="Skill charts, time ranges, most-improved areas, speaking minutes, and weekly AI reports."
-    />
+    <div>
+      <AppHeader
+        title="Progress"
+        subtitle="Skills, mistakes, study volume, and weekly AI report"
+      />
+      <ProgressWorkspace />
+    </div>
   );
 }

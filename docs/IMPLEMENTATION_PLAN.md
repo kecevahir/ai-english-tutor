@@ -23,9 +23,29 @@
 - [x] SRS review session + ReviewHistory
 - [x] Service/UI e2e scripts
 
-## Next: Phase 5 — Grammar
+### Phase 5 — Grammar
+- [x] Grammar mastery list from DB
+- [x] Weak-topic drills + GrammarProgress updates
 
-1. Grammar topic list with mastery
-2. Short drills per topic
-3. Update GrammarProgress from exercise results
-4. Feed weak topics into adaptive engine / lessons
+### Phase 6 — Daily Lesson
+- [x] Adaptive lesson generator from weak areas / due vocab / mistakes
+- [x] Today's Lesson UI with regenerate + module links
+
+### Phase 7 — Speech / Speaking
+- [x] Web Speech STT/TTS client adapters
+- [x] Speaking session UI + descriptive feedback persistence
+
+### Phase 8 — Listening
+- [x] Listening sessions with comprehension + transcript
+- [x] Missed-item vocabulary capture
+
+### Phase 9 — Progress
+- [x] Range filters, skill cards, mistakes, weekly report
+
+### Phase 10 — Level Assessment
+- [x] Multi-section placement test saving CEFR profile/skills
+
+## Ongoing
+- Wire real OpenAI/Anthropic keys in production (`.env.local`)
+- Expand pronunciation word-level scoring when STT confidence is available
+- Chart visuals (optional recharts) on Progress

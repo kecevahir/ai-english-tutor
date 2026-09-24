@@ -20,8 +20,18 @@ Architecture details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 | Phase | Status |
 |-------|--------|
-| 1 Foundation (layout, sidebar, dashboard, Prisma, adaptive stubs) | **In progress / this branch** |
-| 2–10 | Not started |
+| 1 Foundation | Done |
+| 2 AI Conversation | Done |
+| 3 Mistake Analysis | Done |
+| 4 Vocabulary + SRS | Done |
+| 5 Grammar | Done |
+| 6 Daily Lesson | Done |
+| 7 Speaking + Web Speech | Done |
+| 8 Listening | Done |
+| 9 Progress + weekly report | Done |
+| 10 Level Assessment | Done |
+
+Real LLM replies require `AI_PROVIDER=openai|anthropic` and the matching API key. Without keys, `AI_PROVIDER=mock` is used and labeled in the UI (not pretended as a live model).
 
 ## Setup
 
