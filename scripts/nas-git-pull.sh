@@ -48,6 +48,9 @@ fi
 
 echo "$(date -Iseconds) updated $BEFORE → $AFTER — fast restart (no image rebuild)"
 
+# Stamp for container (git may be missing inside the image)
+echo "$AFTER" > "$APP_DIR/.deploy-head"
+
 if [ -f "$APP_DIR/.env" ] && ! grep -q '^AUTH_SECRET=' "$APP_DIR/.env"; then
   echo "AUTH_SECRET=\"englishtutor-auto-$(date +%s)\"" >> "$APP_DIR/.env"
 fi
