@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: englishtutor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-englishtutor}
+      POSTGRES_DB: englishtutor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U englishtutor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://englishtutor:${POSTGRES_PASSWORD:-englishtutor}@db:5432/englishtutor?schema=public
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_MODEL: ${AI_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-30000}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
