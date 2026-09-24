@@ -18,18 +18,22 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-RUN apt-get update -qq && apt-get install -y -qq openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq \
+  && apt-get install -y -qq openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/src ./src
-# public/ is optional; create empty dir if missing in build context
-RUN mkdir -p ./public
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts/start-container.sh ./scripts/start-container.sh
+
+RUN chmod +x ./scripts/start-container.sh \
+  && npx prisma generate
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && npm run start"]
+CMD ["sh", "./scripts/start-container.sh"]

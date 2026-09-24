@@ -1,6 +1,5 @@
 #!/bin/sh
-# Container entrypoint for Synology / Portainer (Command field).
-# Expected workdir mount: /volume1/Docker/englishtutor → /app
+# Container entrypoint — migrate, optional seed, start Next.js
 set -eu
 cd /app
 
@@ -12,14 +11,13 @@ if [ -z "${DATABASE_URL:-}" ]; then
 fi
 
 npx prisma generate
-npx prisma migrate deploy || true
+npx prisma migrate deploy
 
-# Seed is idempotent enough for demo learner; ignore failures on re-run
-npx tsx prisma/seed.ts || true
-
-if [ ! -d .next ]; then
-  echo "[englishtutor] no .next — building…"
-  npm run build
+# Seed must not kill the app on re-run / transient errors
+if npx tsx prisma/seed.ts; then
+  echo "[englishtutor] seed ok"
+else
+  echo "[englishtutor] seed skipped/failed (continuing)"
 fi
 
 exec npm run start -- -H 0.0.0.0 -p "${PORT:-3000}"
